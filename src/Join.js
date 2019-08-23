@@ -2,8 +2,9 @@ import React, { useState, useContext } from "react";
 import { AuthContext } from "./index";
 import * as firebase from "firebase";
 import GoogleAuth  from "./GoogleAuth.js";
+import { withRouter } from 'react-router-dom';
 
-const Join = () => {
+const Join = ({history}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setErrors] = useState("");
@@ -13,12 +14,21 @@ const Join = () => {
     e.preventDefault();
     firebase
     .auth()
-    .createUserWithEmailAndPassword(email, password)
-    .then(res => {
-      if(res.user) Auth.setLoggedIn(true);
-    })
-    .catch(err => {
-      setErrors(err.message);
+    .setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .then(()=> {
+        firebase
+        .auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then(res => {
+          if(res.user) {
+            Auth.setLoggedIn(true);
+            history.push('/reports')
+          }
+        })
+        .catch(err => {
+          setErrors(err.message);
+        })
+
     })
   };
 
@@ -29,16 +39,28 @@ const Join = () => {
    provider.addScope('email');
    firebase
    .auth()
-   .signInWithPopup(provider)
-   .then(function(result) {
-   // This gives you a Google Access Token.
-   //which can be used to fetch additional data using the Google APIs.
-   var token = result.credential.accessToken;
-   // The signed-in user info.
-   var user = result.user;
-   console.log(user);
-    Auth.setLoggedIn(true)
-   });
+   .setPersistence(firebase.auth.Auth.Persistence.SESSION)
+   .then(()=> {
+      firebase
+      .auth()
+      .signInWithPopup(provider)
+      .then(function(result) {
+      // This gives you a Google Access Token.
+      //which can be used to fetch additional data using the Google APIs.
+      var token = result.credential.accessToken;
+      // The signed-in user info.
+      var user = result.user;
+      if(user) {
+        console.log(user);
+        Auth.setLoggedIn(true)
+        history.push('/reports')
+      }
+      })
+      .catch(err => {
+        setErrors(err.message);
+      });
+
+   })
   }
 
   return (
@@ -76,4 +98,4 @@ const Join = () => {
   );
 };
 
-export default Join;
+export default withRouter(Join);
